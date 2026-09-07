@@ -17,6 +17,6 @@ resource "aws_vpc" "my_vpc" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "terraform-github-vpc"
+    Name = "terraform-github-vpc-testing-sep-07"
   }
 }
