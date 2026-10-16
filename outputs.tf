@@ -8,13 +8,12 @@ output "vpc_cidr_block" {
   value       = aws_vpc.my_vpc.cidr_block
 }
 
-output "s3_bucket_id" {
-  description = "ID of the created S3 bucket"
-  value       = aws_s3_bucket.my_bucket.id
+output "vpc_arn" {
+  description = "ARN of the created VPC"
+  value       = aws_vpc.my_vpc.arn
 }
 
-output "s3_bucket_arn" {
-  description = "ARN of the S3 bucket"
-  value       = aws_s3_bucket.my_bucket.arn
+output "environment" {
+  description = "Deployment environment"
+  value       = var.environment
 }
-
