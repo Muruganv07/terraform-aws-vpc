@@ -16,3 +16,14 @@ resource "aws_vpc" "my_vpc1" {
     Name = var.vpc_name
   }
 }
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = var.s3_bucket_name
+  acl    = var.s3_acl
+
+  tags = {
+    Name        = var.s3_bucket_name
+    Environment = "Dev"
+  }
+}
+
