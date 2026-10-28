@@ -3,6 +3,14 @@ name: Terraform AWS VPC
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: "Select environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+
       action:
         description: "Terraform action"
         required: true
@@ -10,18 +18,23 @@ on:
         options:
           - plan
           - apply
+        default: plan
 
 permissions:
   contents: read
 
-concurrency:
-  group: terraform-dev
-  cancel-in-progress: false
-
 jobs:
   terraform:
-    name: Terraform DEV
+    name: Terraform ${{ inputs.environment }}
     runs-on: ubuntu-latest
+
+    concurrency:
+      group: terraform-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    env:
+      AWS_REGION: ap-south-1
+      TF_IN_AUTOMATION: true
 
     defaults:
       run:
@@ -38,26 +51,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.12.2
+          terraform_version: "1.11.4"
 
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+      - name: Check AWS identity
+        run: aws sts get-caller-identity
 
-      - name: Terraform Init
-        run: terraform init
+      - name: Initialize Terraform backend
+        run: |
+          terraform init \
+            -input=false \
+            -reconfigure \
+            -backend-config="environments/${{ inputs.environment }}/backend.hcl"
 
-      - name: Terraform Validate
+      - name: Validate Terraform
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: |
+          terraform plan \
+            -input=false \
+            -lock-timeout=5m \
+            -var-file="environments/${{ inputs.environment }}/terraform.tfvars" \
+            -out=tfplan
 
       - name: Terraform Apply
         if: ${{ inputs.action == 'apply' }}
-        run: terraform apply tfplan
+        run: terraform apply -input=false -lock-timeout=5m -auto-approve tfplan
