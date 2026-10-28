@@ -18,6 +18,7 @@ on:
         options:
           - plan
           - apply
+          - destroy
         default: plan
 
 permissions:
@@ -70,6 +71,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        if: ${{ inputs.action == 'plan' || inputs.action == 'apply' }}
         run: |
           terraform plan \
             -input=false \
@@ -79,4 +81,28 @@ jobs:
 
       - name: Terraform Apply
         if: ${{ inputs.action == 'apply' }}
-        run: terraform apply -input=false -lock-timeout=5m -auto-approve tfplan
+        run: |
+          terraform apply \
+            -input=false \
+            -lock-timeout=5m \
+            -auto-approve \
+            tfplan
+
+      - name: Terraform Destroy Plan
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          terraform plan \
+            -destroy \
+            -input=false \
+            -lock-timeout=5m \
+            -var-file="environments/${{ inputs.environment }}/terraform.tfvars" \
+            -out=tfplan
+
+      - name: Terraform Destroy
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          terraform apply \
+            -input=false \
+            -lock-timeout=5m \
+            -auto-approve \
+            tfplan
